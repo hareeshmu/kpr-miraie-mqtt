@@ -124,7 +124,7 @@ cp devices.yaml.example devices.yaml
 
 ### 4. Run the bridge
 
-**Important:** Run all commands from inside the `bridge/` directory.
+**Important:** You must create both `credentials.json` and `devices.yaml` files (steps 2-3) before running Docker. If these files don't exist, Docker will create them as directories and the bridge will fail.
 
 **With Docker (recommended):**
 ```bash

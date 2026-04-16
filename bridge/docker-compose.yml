@@ -5,4 +5,4 @@ services:
     restart: unless-stopped
     volumes:
       - ./credentials.json:/app/credentials.json:ro
-      - ./devices.yaml:/app/devices.yaml:ro
+      - ./devices.yaml:/app/devices.yaml
