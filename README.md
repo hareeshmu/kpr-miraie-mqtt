@@ -97,10 +97,18 @@ Your Home Assistant only communicates with your local MQTT broker — it never t
 
 The HA component handles device discovery and entity creation. A separate **bridge** container relays MQTT messages between MirAIe cloud and your local broker. Both are needed.
 
-### 1. Configure bridge
+### 1. Copy bridge files to your server
+
+Copy the `bridge/` folder to any machine that can reach both your MQTT broker and the internet (e.g. the same host as your MQTT broker):
 
 ```bash
-cd bridge
+git clone https://github.com/hareeshmu/kpr-miraie-mqtt.git
+cd kpr-miraie-mqtt/bridge
+```
+
+### 2. Configure
+
+```bash
 cp credentials-email.json.example credentials.json
 # Edit credentials.json with your MirAIe login
 
@@ -114,16 +122,19 @@ pip install -r requirements.txt
 python3 miraie_bridge.py
 ```
 
-### 2. Deploy bridge
+### 3. Deploy bridge
 
-Deploy on any machine that can reach both your MQTT broker and the internet (e.g. the same host as your MQTT broker).
+**Important:** Run all commands from inside the `bridge/` directory.
 
+**With Docker (recommended):**
 ```bash
+cd bridge
 docker compose up -d
 ```
 
-Or run directly without Docker:
+**Or directly with Python:**
 ```bash
+cd bridge
 pip install -r requirements.txt
 python3 miraie_bridge.py
 ```
