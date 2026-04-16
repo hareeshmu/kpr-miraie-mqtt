@@ -182,6 +182,9 @@ You should see devices connecting and status flowing.
 - Ensure bridge is forwarding commands (look for `[local→cloud]` in logs)
 - The AC must be online (check the Online binary sensor)
 
+**`IsADirectoryError: 'devices.yaml'`:**
+- You created `devices.yaml` as a folder instead of a file. Fix: `rm -rf devices.yaml && cp devices.yaml.example devices.yaml`
+
 ## License
 
 MIT
