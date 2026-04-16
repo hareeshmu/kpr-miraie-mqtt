@@ -1,0 +1,22 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "KPR MirAIe Login",
+        "description": "Enter your MirAIe app credentials (email or mobile number).",
+        "data": {
+          "username": "Email or Mobile (+91...)",
+          "password": "Password"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Cannot connect to MirAIe cloud",
+      "invalid_auth": "Invalid email/mobile or password",
+      "unknown": "Unexpected error"
+    },
+    "abort": {
+      "already_configured": "MirAIe is already configured"
+    }
+  }
+}

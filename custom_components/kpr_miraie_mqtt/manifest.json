@@ -1,0 +1,13 @@
+{
+  "domain": "kpr_miraie_mqtt",
+  "name": "KPR MirAIe Local MQTT",
+  "codeowners": ["@hareeshmu"],
+  "config_flow": true,
+  "dependencies": ["mqtt"],
+  "documentation": "https://github.com/hareeshmu/kpr-miraie-mqtt",
+  "integration_type": "hub",
+  "iot_class": "cloud_push",
+  "issue_tracker": "https://github.com/hareeshmu/kpr-miraie-mqtt/issues",
+  "requirements": ["requests>=2.28", "certifi>=2023.5.7"],
+  "version": "1.0.0"
+}
