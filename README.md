@@ -182,6 +182,10 @@ You should see devices connecting and status flowing.
 - Ensure bridge is forwarding commands (look for `[local→cloud]` in logs)
 - The AC must be online (check the Online binary sensor)
 
+**Changed MirAIe password:**
+- Update `bridge/credentials.json` with the new password, then `docker compose restart`
+- In HA: Settings → Devices & Services → KPR MirAIe → Delete → Re-add with new password
+
 **`IsADirectoryError: 'devices.yaml'`:**
 - You created `devices.yaml` as a folder instead of a file. Fix: `rm -rf devices.yaml && cp devices.yaml.example devices.yaml`
 
