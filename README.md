@@ -199,9 +199,12 @@ You should see devices connecting and status flowing.
 
 ## Changelog
 
+### v1.2.0
+- Energy sensors: daily, weekly, monthly consumption (kWh)
+- Energy polled from cloud API every 30 min
+
 ### v1.1.0
 - AC model number shown in device info (e.g. CS-CU-NU18ZKY5W)
-- Energy Today sensor (daily kWh, polled every 30 min)
 - Total Operating Hours sensor
 - Filter Dust Level sensor
 - Filter Cleaning Required alert
