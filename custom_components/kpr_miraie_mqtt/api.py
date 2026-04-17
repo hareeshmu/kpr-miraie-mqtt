@@ -129,12 +129,12 @@ class MirAIeApi:
             end = start
             grain = "Daily"
         elif period == "weekly":
-            # From last Sunday to today
+            # Weekly grain is broken on MirAIe API — use Daily and sum
             days_since_sunday = (now.weekday() + 1) % 7
             sunday = now - timedelta(days=days_since_sunday)
             start = sunday.strftime("%d%m%Y")
             end = now.strftime("%d%m%Y")
-            grain = "Weekly"
+            grain = "Daily"
         elif period == "monthly":
             start = now.strftime("%m%Y")
             end = start
