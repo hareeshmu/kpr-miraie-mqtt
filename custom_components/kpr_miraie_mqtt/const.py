@@ -8,6 +8,8 @@ API_SCOPE = "an_14214235325"
 API_LOGIN_URL = "https://auth.miraie.in/simplifi/v1/userManagement/login"
 API_HOMES_URL = "https://app.miraie.in/simplifi/v1/homeManagement/homes"
 API_DEVICE_STATUS_URL = "https://app.miraie.in/simplifi/v1/deviceManagement/devices/{device_id}/mobile/status"
+API_DEVICE_DETAILS_URL = "https://app.miraie.in/simplifi/v1/deviceManagement/devices/deviceId"
+API_ENERGY_URL = "https://app.miraie.in/simplifi/v1/powerConsumption/devices/{device_id}?grain={grain}&startDate={start_date}&endDate={end_date}"
 API_USER_AGENT = "okhttp/3.13.1"
 
 # Cloud MQTT

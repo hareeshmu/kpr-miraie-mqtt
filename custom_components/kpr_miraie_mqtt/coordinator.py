@@ -46,6 +46,7 @@ class MirAIeCoordinator:
 
         self.devices: dict[str, dict] = {}
         self._unsub_timer = None
+        self._unsub_energy = None
 
     async def async_setup(self) -> None:
         """Discover devices and publish HA MQTT Discovery configs."""
@@ -65,27 +66,50 @@ class MirAIeCoordinator:
             self.devices[device_id] = {"name": name, "space": space, "slug": slug}
             _LOGGER.info("Discovered device: %s (%s) in %s", name, device_id, space)
 
-        # Get firmware version from device status
+        # Get device details (model number, firmware, MAC)
+        try:
+            device_ids = list(self.devices.keys())
+            details = await self.api.async_get_device_details(self.hass, device_ids)
+            for detail in details:
+                did = detail.get("deviceId")
+                if did in self.devices:
+                    self.devices[did]["model_number"] = detail.get("modelNumber", "")
+                    self.devices[did]["fw_version"] = detail.get("firmwareVersion", "")
+                    self.devices[did]["mac"] = detail.get("macAddress", "")
+                    self.devices[did]["serial"] = detail.get("productSerialNumber", "")
+                    _LOGGER.info("Device %s model: %s", did, detail.get("modelNumber"))
+        except Exception as err:
+            _LOGGER.warning("Could not get device details: %s", err)
+
+        # Get firmware version from status as fallback
         for device_id, dev in self.devices.items():
-            try:
-                status = await self.api.async_get_device_status(self.hass, device_id)
-                dev["fw_version"] = status.get("V", "")
-                dev["model_code"] = status.get("mo", "")
-            except Exception:
-                pass
+            if not dev.get("fw_version"):
+                try:
+                    status = await self.api.async_get_device_status(self.hass, device_id)
+                    dev["fw_version"] = status.get("V", "")
+                except Exception:
+                    pass
 
         # Publish HA MQTT Discovery configs
         await self._publish_discovery()
 
-        # Token refresh timer (bridge container also refreshes, but keep in sync)
+        # Token refresh + energy polling timer
         self._unsub_timer = async_track_time_interval(
             self.hass, self._async_check_token, timedelta(hours=1)
         )
+        self._unsub_energy = async_track_time_interval(
+            self.hass, self._async_poll_energy, timedelta(minutes=30)
+        )
+
+        # Initial energy fetch
+        await self._async_poll_energy()
 
     async def async_unload(self) -> None:
         """Cleanup: unpublish discovery."""
         if self._unsub_timer:
             self._unsub_timer()
+        if self._unsub_energy:
+            self._unsub_energy()
         await self._unpublish_discovery()
 
     # ── HA MQTT Discovery ──────────────────────────────────────────
@@ -114,15 +138,20 @@ class MirAIeCoordinator:
         control_topic = f"{TOPIC_PREFIX}/{device_id}/control"
         connection_topic = f"{TOPIC_PREFIX}/{device_id}/connectionStatus"
 
+        model_number = dev.get("model_number", "")
+        model_display = f"Panasonic MirAIe Smart AC ({model_number})" if model_number else "Panasonic MirAIe Smart AC"
+
         device_block = {
             "identifiers": [f"kpr_miraie_{device_id}"],
             "name": dev["name"],
             "manufacturer": "KPR",
-            "model": "Panasonic MirAIe Smart AC",
+            "model": model_display,
             "sw_version": dev.get("fw_version", ""),
-            "hw_version": dev.get("model_code", ""),
+            "serial_number": dev.get("serial", ""),
             "configuration_url": "https://github.com/hareeshmu/kpr-miraie-mqtt",
         }
+        if dev.get("mac"):
+            device_block["connections"] = [["mac", dev["mac"]]]
 
         entities = []
 
@@ -301,7 +330,74 @@ class MirAIeCoordinator:
             "icon": "mdi:percent",
         }))
 
+        # Total operating hours sensor
+        entities.append(("sensor", f"{slug}_operating_hours", {
+            "name": "Operating Hours",
+            "unique_id": f"kpr_miraie_{device_id}_operating_hours",
+            "object_id": f"{slug}_operating_hours",
+            "device": device_block,
+            "state_topic": status_topic,
+            "value_template": "{{ value_json.totalOperatingHours | round(1) if value_json.totalOperatingHours is defined else None }}",
+            "unit_of_measurement": "h",
+            "icon": "mdi:clock-outline",
+            "state_class": "total_increasing",
+            "entity_category": "diagnostic",
+        }))
+
+        # Filter dust level sensor
+        entities.append(("sensor", f"{slug}_filter_dust", {
+            "name": "Filter Dust Level",
+            "unique_id": f"kpr_miraie_{device_id}_filter_dust",
+            "object_id": f"{slug}_filter_dust",
+            "device": device_block,
+            "state_topic": status_topic,
+            "value_template": "{{ value_json.filterDustLevel if value_json.filterDustLevel is defined else None }}",
+            "icon": "mdi:air-filter",
+            "entity_category": "diagnostic",
+        }))
+
+        # Filter cleaning required binary sensor
+        entities.append(("binary_sensor", f"{slug}_filter_clean", {
+            "name": "Filter Cleaning Required",
+            "unique_id": f"kpr_miraie_{device_id}_filter_clean",
+            "object_id": f"{slug}_filter_clean",
+            "device": device_block,
+            "state_topic": status_topic,
+            "value_template": "{{ value_json.filterCleaningRequired if value_json.filterCleaningRequired is defined else False }}",
+            "payload_on": "True",
+            "payload_off": "False",
+            "device_class": "problem",
+            "entity_category": "diagnostic",
+        }))
+
+        # Daily energy consumption sensor
+        entities.append(("sensor", f"{slug}_energy_today", {
+            "name": "Energy Today",
+            "unique_id": f"kpr_miraie_{device_id}_energy_today",
+            "object_id": f"{slug}_energy_today",
+            "device": device_block,
+            "state_topic": f"{TOPIC_PREFIX}/{device_id}/energy",
+            "unit_of_measurement": "kWh",
+            "device_class": "energy",
+            "state_class": "total_increasing",
+            "icon": "mdi:lightning-bolt",
+        }))
+
         return entities
+
+    # ── Energy polling ──────────────────────────────────────────────
+
+    async def _async_poll_energy(self, now=None) -> None:
+        """Fetch daily energy consumption from cloud API and publish to local MQTT."""
+        for device_id in self.devices:
+            try:
+                energy = await self.api.async_get_energy(self.hass, device_id)
+                if energy is not None:
+                    topic = f"{TOPIC_PREFIX}/{device_id}/energy"
+                    await async_publish(self.hass, topic, str(energy), retain=True)
+                    _LOGGER.debug("Energy for %s: %s kWh", device_id, energy)
+            except Exception as err:
+                _LOGGER.debug("Could not get energy for %s: %s", device_id, err)
 
     # ── Token refresh ──────────────────────────────────────────────
 

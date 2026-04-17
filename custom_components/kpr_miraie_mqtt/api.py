@@ -3,12 +3,15 @@ from __future__ import annotations
 
 import logging
 import time
+from datetime import datetime
 
 import requests
 
 from .const import (
     API_CLIENT_ID,
+    API_DEVICE_DETAILS_URL,
     API_DEVICE_STATUS_URL,
+    API_ENERGY_URL,
     API_HOMES_URL,
     API_LOGIN_URL,
     API_SCOPE,
@@ -97,6 +100,43 @@ class MirAIeApi:
         )
         resp.raise_for_status()
         return resp.json()
+
+    async def async_get_device_details(self, hass, device_ids: list[str]) -> list[dict]:
+        """Get device details (model number, MAC, etc.)."""
+        return await hass.async_add_executor_job(self._get_device_details, device_ids)
+
+    def _get_device_details(self, device_ids: list[str]) -> list[dict]:
+        ids = ",".join(device_ids)
+        resp = requests.get(
+            f"{API_DEVICE_DETAILS_URL}/{ids}",
+            headers=self._headers(),
+            timeout=15,
+        )
+        resp.raise_for_status()
+        return resp.json()
+
+    async def async_get_energy(self, hass, device_id: str) -> float | None:
+        """Get today's energy consumption in kWh."""
+        return await hass.async_add_executor_job(self._get_energy, device_id)
+
+    def _get_energy(self, device_id: str) -> float | None:
+        today = datetime.now().strftime("%d%m%Y")
+        resp = requests.get(
+            API_ENERGY_URL.format(
+                device_id=device_id,
+                grain="Daily",
+                start_date=today,
+                end_date=today,
+            ),
+            headers=self._headers(),
+            timeout=15,
+        )
+        if resp.status_code != 200:
+            return None
+        data = resp.json()
+        if data:
+            return round(data[-1].get("power", 0), 2)
+        return None
 
     async def async_refresh_token(self, hass) -> None:
         """Re-login to refresh the token."""
