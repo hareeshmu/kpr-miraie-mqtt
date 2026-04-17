@@ -47,6 +47,7 @@ class MirAIeCoordinator:
         self.devices: dict[str, dict] = {}
         self._unsub_timer = None
         self._unsub_energy = None
+        self._unsub_status = None
 
     async def async_setup(self) -> None:
         """Discover devices and publish HA MQTT Discovery configs."""
@@ -100,9 +101,13 @@ class MirAIeCoordinator:
         self._unsub_energy = async_track_time_interval(
             self.hass, self._async_poll_energy, timedelta(minutes=30)
         )
+        self._unsub_status = async_track_time_interval(
+            self.hass, self._async_poll_status, timedelta(minutes=15)
+        )
 
-        # Initial energy fetch
+        # Initial fetch
         await self._async_poll_energy()
+        await self._async_poll_status()
 
     async def async_unload(self) -> None:
         """Cleanup: unpublish discovery."""
@@ -110,6 +115,8 @@ class MirAIeCoordinator:
             self._unsub_timer()
         if self._unsub_energy:
             self._unsub_energy()
+        if self._unsub_status:
+            self._unsub_status()
         await self._unpublish_discovery()
 
     # ── HA MQTT Discovery ──────────────────────────────────────────
@@ -330,40 +337,38 @@ class MirAIeCoordinator:
             "icon": "mdi:percent",
         }))
 
-        # Total operating hours sensor
+        # Total operating hours sensor (from REST API)
+        api_prefix = f"{TOPIC_PREFIX}/{device_id}/api"
         entities.append(("sensor", f"{slug}_operating_hours", {
             "name": "Operating Hours",
             "unique_id": f"kpr_miraie_{device_id}_operating_hours",
             "object_id": f"{slug}_operating_hours",
             "device": device_block,
-            "state_topic": status_topic,
-            "value_template": "{{ value_json.totalOperatingHours | round(1) if value_json.totalOperatingHours is defined else None }}",
+            "state_topic": f"{api_prefix}/totalOperatingHours",
             "unit_of_measurement": "h",
             "icon": "mdi:clock-outline",
             "state_class": "total_increasing",
             "entity_category": "diagnostic",
         }))
 
-        # Filter dust level sensor
+        # Filter dust level sensor (from REST API)
         entities.append(("sensor", f"{slug}_filter_dust", {
             "name": "Filter Dust Level",
             "unique_id": f"kpr_miraie_{device_id}_filter_dust",
             "object_id": f"{slug}_filter_dust",
             "device": device_block,
-            "state_topic": status_topic,
-            "value_template": "{{ value_json.filterDustLevel if value_json.filterDustLevel is defined else None }}",
+            "state_topic": f"{api_prefix}/filterDustLevel",
             "icon": "mdi:air-filter",
             "entity_category": "diagnostic",
         }))
 
-        # Filter cleaning required binary sensor
+        # Filter cleaning required binary sensor (from REST API)
         entities.append(("binary_sensor", f"{slug}_filter_clean", {
             "name": "Filter Cleaning Required",
             "unique_id": f"kpr_miraie_{device_id}_filter_clean",
             "object_id": f"{slug}_filter_clean",
             "device": device_block,
-            "state_topic": status_topic,
-            "value_template": "{{ value_json.filterCleaningRequired if value_json.filterCleaningRequired is defined else False }}",
+            "state_topic": f"{api_prefix}/filterCleaningRequired",
             "payload_on": "True",
             "payload_off": "False",
             "device_class": "problem",
@@ -400,6 +405,22 @@ class MirAIeCoordinator:
                         _LOGGER.debug("Energy %s for %s: %s kWh", period, device_id, energy)
                 except Exception as err:
                     _LOGGER.debug("Could not get %s energy for %s: %s", period, device_id, err)
+
+    # ── Status polling (REST API fields not in MQTT) ─────────────────
+
+    async def _async_poll_status(self, now=None) -> None:
+        """Fetch device status from REST API for fields not in MQTT (filter, hours)."""
+        for device_id in self.devices:
+            try:
+                status = await self.api.async_get_device_status(self.hass, device_id)
+                # Publish REST-only fields to dedicated topics
+                for key in ("totalOperatingHours", "filterDustLevel", "filterCleaningRequired"):
+                    if key in status:
+                        topic = f"{TOPIC_PREFIX}/{device_id}/api/{key}"
+                        await async_publish(self.hass, topic, str(status[key]), retain=True)
+                _LOGGER.debug("Polled REST status for %s", device_id)
+            except Exception as err:
+                _LOGGER.debug("Could not poll status for %s: %s", device_id, err)
 
     # ── Token refresh ──────────────────────────────────────────────
 

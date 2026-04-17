@@ -199,6 +199,10 @@ You should see devices connecting and status flowing.
 
 ## Changelog
 
+### v1.2.2
+- Fix Operating Hours, Filter Dust Level, Filter Cleaning sensors (now polled from REST API every 15 min)
+- These fields are not in MQTT status — requires REST API polling
+
 ### v1.2.1
 - Fix weekly energy sensor (MirAIe Weekly API broken, now sums daily values)
 - Removed stale Energy Today entity
