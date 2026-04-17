@@ -199,6 +199,9 @@ You should see devices connecting and status flowing.
 
 ## Changelog
 
+### v1.2.4
+- Round operating hours to 1 decimal place
+
 ### v1.2.3
 - Hide filter/operating hours sensors for devices that don't support them
 

@@ -420,8 +420,11 @@ class MirAIeCoordinator:
                 # Publish REST-only fields to dedicated topics
                 for key in ("totalOperatingHours", "filterDustLevel", "filterCleaningRequired"):
                     if key in status:
+                        value = status[key]
+                        if key == "totalOperatingHours":
+                            value = round(float(value), 1)
                         topic = f"{TOPIC_PREFIX}/{device_id}/api/{key}"
-                        await async_publish(self.hass, topic, str(status[key]), retain=True)
+                        await async_publish(self.hass, topic, str(value), retain=True)
                 _LOGGER.debug("Polled REST status for %s", device_id)
             except Exception as err:
                 _LOGGER.debug("Could not poll status for %s: %s", device_id, err)
