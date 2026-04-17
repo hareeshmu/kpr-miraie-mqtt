@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import logging
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import requests
 
@@ -115,18 +115,39 @@ class MirAIeApi:
         resp.raise_for_status()
         return resp.json()
 
-    async def async_get_energy(self, hass, device_id: str) -> float | None:
-        """Get today's energy consumption in kWh."""
-        return await hass.async_add_executor_job(self._get_energy, device_id)
+    async def async_get_energy(self, hass, device_id: str, period: str = "daily") -> float | None:
+        """Get energy consumption in kWh. Period: daily, weekly, monthly."""
+        return await hass.async_add_executor_job(self._get_energy, device_id, period)
 
-    def _get_energy(self, device_id: str) -> float | None:
-        today = datetime.now().strftime("%d%m%Y")
+    def _get_energy(self, device_id: str, period: str = "daily") -> float | None:
+        now = datetime.now()
+
+        if period == "daily":
+            # Yesterday's consumption (today's data updates between 7-10am next day)
+            yesterday = now - timedelta(days=1)
+            start = yesterday.strftime("%d%m%Y")
+            end = start
+            grain = "Daily"
+        elif period == "weekly":
+            # From last Sunday to today
+            days_since_sunday = (now.weekday() + 1) % 7
+            sunday = now - timedelta(days=days_since_sunday)
+            start = sunday.strftime("%d%m%Y")
+            end = now.strftime("%d%m%Y")
+            grain = "Weekly"
+        elif period == "monthly":
+            start = now.strftime("%m%Y")
+            end = start
+            grain = "Monthly"
+        else:
+            return None
+
         resp = requests.get(
             API_ENERGY_URL.format(
                 device_id=device_id,
-                grain="Daily",
-                start_date=today,
-                end_date=today,
+                grain=grain,
+                start_date=start,
+                end_date=end,
             ),
             headers=self._headers(),
             timeout=15,
@@ -135,7 +156,8 @@ class MirAIeApi:
             return None
         data = resp.json()
         if data:
-            return round(data[-1].get("power", 0), 2)
+            total = sum(d.get("power", 0) for d in data)
+            return round(total, 2)
         return None
 
     async def async_refresh_token(self, hass) -> None:

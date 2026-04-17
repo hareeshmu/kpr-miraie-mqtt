@@ -370,34 +370,36 @@ class MirAIeCoordinator:
             "entity_category": "diagnostic",
         }))
 
-        # Daily energy consumption sensor
-        entities.append(("sensor", f"{slug}_energy_today", {
-            "name": "Energy Today",
-            "unique_id": f"kpr_miraie_{device_id}_energy_today",
-            "object_id": f"{slug}_energy_today",
-            "device": device_block,
-            "state_topic": f"{TOPIC_PREFIX}/{device_id}/energy",
-            "unit_of_measurement": "kWh",
-            "device_class": "energy",
-            "state_class": "total_increasing",
-            "icon": "mdi:lightning-bolt",
-        }))
+        # Energy consumption sensors
+        for period, label in [("daily", "Energy Daily"), ("weekly", "Energy Weekly"), ("monthly", "Energy Monthly")]:
+            entities.append(("sensor", f"{slug}_energy_{period}", {
+                "name": label,
+                "unique_id": f"kpr_miraie_{device_id}_energy_{period}",
+                "object_id": f"{slug}_energy_{period}",
+                "device": device_block,
+                "state_topic": f"{TOPIC_PREFIX}/{device_id}/energy_{period}",
+                "unit_of_measurement": "kWh",
+                "device_class": "energy",
+                "state_class": "total",
+                "icon": "mdi:lightning-bolt",
+            }))
 
         return entities
 
     # ── Energy polling ──────────────────────────────────────────────
 
     async def _async_poll_energy(self, now=None) -> None:
-        """Fetch daily energy consumption from cloud API and publish to local MQTT."""
+        """Fetch energy consumption from cloud API and publish to local MQTT."""
         for device_id in self.devices:
-            try:
-                energy = await self.api.async_get_energy(self.hass, device_id)
-                if energy is not None:
-                    topic = f"{TOPIC_PREFIX}/{device_id}/energy"
-                    await async_publish(self.hass, topic, str(energy), retain=True)
-                    _LOGGER.debug("Energy for %s: %s kWh", device_id, energy)
-            except Exception as err:
-                _LOGGER.debug("Could not get energy for %s: %s", device_id, err)
+            for period in ("daily", "weekly", "monthly"):
+                try:
+                    energy = await self.api.async_get_energy(self.hass, device_id, period)
+                    if energy is not None:
+                        topic = f"{TOPIC_PREFIX}/{device_id}/energy_{period}"
+                        await async_publish(self.hass, topic, str(energy), retain=True)
+                        _LOGGER.debug("Energy %s for %s: %s kWh", period, device_id, energy)
+                except Exception as err:
+                    _LOGGER.debug("Could not get %s energy for %s: %s", period, device_id, err)
 
     # ── Token refresh ──────────────────────────────────────────────
 
