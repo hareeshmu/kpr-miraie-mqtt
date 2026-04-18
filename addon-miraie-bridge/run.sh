@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # MirAIe MQTT Bridge — HA Add-on entrypoint
 # Reads /data/options.json, writes credentials.json + devices.yaml, then
-# launches miraie_bridge.py as PID 1. Runs on plain python:3.12-slim —
-# no s6-overlay or bashio required.
+# launches miraie_bridge.py as PID 1. Runs in the hassio-addons/base
+# container (Alpine) with s6-overlay disabled via init: false.
 
 set -e
 
@@ -78,27 +78,28 @@ if [ ! -f "$DEVICES_FILE" ]; then
     log "First run — creating ${DEVICES_FILE}"
     DEVICES_JSON=$(jq '.devices // []' "$CONFIG_PATH")
 
-    python3 - <<PYEOF
-import yaml, json
+    export MQTT_HOST="$MQTT_HOST_FINAL" MQTT_PORT="$MQTT_PORT_FINAL" MQTT_USER="$MQTT_USER_FINAL" MQTT_PASS="$MQTT_PASS_FINAL" CLOUD_BROKER="$CLOUD_BROKER" CLOUD_PORT="$CLOUD_PORT" HA_DISC_PREFIX="$HA_DISC_PREFIX" DEVICES_JSON="$DEVICES_JSON" DEVICES_FILE="$DEVICES_FILE"
+    python3 - <<'PYEOF'
+import os, yaml, json
 
 mqtt = {
-    'host': '${MQTT_HOST_FINAL}',
-    'port': int('${MQTT_PORT_FINAL}'),
-    'username': '${MQTT_USER_FINAL}',
-    'password': '${MQTT_PASS_FINAL}',
+    'host': os.environ.get('MQTT_HOST', ''),
+    'port': int(os.environ.get('MQTT_PORT', 1883)),
+    'username': os.environ.get('MQTT_USER', ''),
+    'password': os.environ.get('MQTT_PASS', ''),
 }
-cloud   = {'broker': '${CLOUD_BROKER}', 'port': int('${CLOUD_PORT}')}
-devices = json.loads(r"""${DEVICES_JSON}""")
+cloud   = {'broker': os.environ.get('CLOUD_BROKER', 'mqtt.miraie.in'), 'port': int(os.environ.get('CLOUD_PORT', 8883))}
+devices = json.loads(os.environ.get('DEVICES_JSON', '[]'))
 
 cfg = {
     'mqtt': mqtt,
-    'ha_discovery_prefix': '${HA_DISC_PREFIX}',
+    'ha_discovery_prefix': os.environ.get('HA_DISC_PREFIX', 'homeassistant'),
     'cloud': cloud,
     'devices': devices,
 }
-with open('${DEVICES_FILE}', 'w') as f:
+with open(os.environ.get('DEVICES_FILE', '/data/devices.yaml'), 'w') as f:
     yaml.dump(cfg, f, default_flow_style=False, sort_keys=False)
-print('[addon] ${DEVICES_FILE} created')
+print('[addon] devices.yaml created')
 PYEOF
 
 else
@@ -112,30 +113,32 @@ else
         USE_ADDON_DEVICES="False"
     fi
 
-    python3 - <<PYEOF
-import yaml, json
+    export MQTT_HOST="$MQTT_HOST_FINAL" MQTT_PORT="$MQTT_PORT_FINAL" MQTT_USER="$MQTT_USER_FINAL" MQTT_PASS="$MQTT_PASS_FINAL" CLOUD_BROKER="$CLOUD_BROKER" CLOUD_PORT="$CLOUD_PORT" HA_DISC_PREFIX="$HA_DISC_PREFIX" DEVICES_JSON="$DEVICES_JSON" DEVICES_FILE="$DEVICES_FILE" USE_ADDON_DEVICES="$USE_ADDON_DEVICES"
+    python3 - <<'PYEOF'
+import os, yaml, json
 
-with open('${DEVICES_FILE}') as f:
+devices_file = os.environ.get('DEVICES_FILE', '/data/devices.yaml')
+with open(devices_file) as f:
     cfg = yaml.safe_load(f) or {}
 
 cfg['mqtt'] = {
-    'host': '${MQTT_HOST_FINAL}',
-    'port': int('${MQTT_PORT_FINAL}'),
-    'username': '${MQTT_USER_FINAL}',
-    'password': '${MQTT_PASS_FINAL}',
+    'host': os.environ.get('MQTT_HOST', ''),
+    'port': int(os.environ.get('MQTT_PORT', 1883)),
+    'username': os.environ.get('MQTT_USER', ''),
+    'password': os.environ.get('MQTT_PASS', ''),
 }
-cfg['cloud']               = {'broker': '${CLOUD_BROKER}', 'port': int('${CLOUD_PORT}')}
-cfg['ha_discovery_prefix'] = '${HA_DISC_PREFIX}'
+cfg['cloud']               = {'broker': os.environ.get('CLOUD_BROKER', 'mqtt.miraie.in'), 'port': int(os.environ.get('CLOUD_PORT', 8883))}
+cfg['ha_discovery_prefix'] = os.environ.get('HA_DISC_PREFIX', 'homeassistant')
 
-if ${USE_ADDON_DEVICES}:
-    devices = json.loads(r"""${DEVICES_JSON}""")
+if os.environ.get('USE_ADDON_DEVICES', 'False') == 'True':
+    devices = json.loads(os.environ.get('DEVICES_JSON', '[]'))
     cfg['devices'] = devices
     print(f'[addon] Using {len(devices)} device(s) from add-on options')
 else:
     existing = cfg.get('devices') or []
     print(f'[addon] Preserving {len(existing)} previously discovered device(s)')
 
-with open('${DEVICES_FILE}', 'w') as f:
+with open(devices_file, 'w') as f:
     yaml.dump(cfg, f, default_flow_style=False, sort_keys=False)
 PYEOF
 

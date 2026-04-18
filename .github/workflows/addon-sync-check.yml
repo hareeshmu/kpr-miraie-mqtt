@@ -1,0 +1,27 @@
+name: addon-sync-check
+
+on:
+  pull_request:
+    paths:
+      - "bridge/miraie_bridge.py"
+      - "addon-miraie-bridge/miraie_bridge.py"
+  push:
+    branches: [main]
+    paths:
+      - "bridge/miraie_bridge.py"
+      - "addon-miraie-bridge/miraie_bridge.py"
+
+jobs:
+  cmp:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify addon bridge copy is in sync
+        run: |
+          if ! cmp -s bridge/miraie_bridge.py addon-miraie-bridge/miraie_bridge.py; then
+            echo "::error::bridge/miraie_bridge.py and addon-miraie-bridge/miraie_bridge.py have diverged."
+            echo "::error::Run scripts/sync-addon-bridge.sh and commit the result."
+            diff -u bridge/miraie_bridge.py addon-miraie-bridge/miraie_bridge.py || true
+            exit 1
+          fi
+          echo "OK — addon bridge copy is in sync."
