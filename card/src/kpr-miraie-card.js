@@ -1,4 +1,4 @@
-const KPR_CARD_VERSION = "1.3.0";
+const KPR_CARD_VERSION = "1.3.1";
 console.info(
   `%c KPR-MIRAIE-CARD %c v${KPR_CARD_VERSION} `,
   "background:#00bfff;color:#000;font-weight:700;padding:2px 4px;border-radius:3px 0 0 3px;",
@@ -538,7 +538,11 @@ class KprMiraieCard extends LitElement {
               <span class="mode-label"
                 style="color: ${isOff ? "#616161" : modeColor}">${modeLabel}</span>
             </div>
-            <div class="dial-temp">${!isOff && targetTemp != null ? Number(targetTemp).toFixed(1) : "--"}<span class="unit">°C</span></div>
+            <div class="dial-temp">${
+              isOff
+                ? (currentTemp != null ? Number(currentTemp).toFixed(1) : "--")
+                : (targetTemp != null ? Number(targetTemp).toFixed(1) : "--")
+            }<span class="unit">°C</span></div>
             ${!isOff ? html`
               <div class="room-temp">
                 <span class="room-val-wrap">${currentTemp != null ? Number(currentTemp).toFixed(1) : "--"}°C</span>

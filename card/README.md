@@ -190,6 +190,11 @@ keep working unchanged (same entity ID, just renamed in the UI).
 
 ## Changelog
 
+### 1.3.1
+- Show current room temperature as the large center reading when the AC is
+  powered off (was `--°C`). Mode label still reads "Off" and the cyan line
+  below still shows "Powered Off" for clarity.
+
 ### 1.3.0
 - Rewritten dial: 80 ticks, mode-color halo (5-stop radial gradient), cool/warm
   arc split, white room-temp needle, responsive cqw sizing

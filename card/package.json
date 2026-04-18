@@ -1,6 +1,6 @@
 {
   "name": "kpr-miraie-card",
-  "version": "1.3.0",
+  "version": "1.3.1",
   "description": "Custom Lovelace card for Panasonic MirAIe ACs — LVGL-inspired dial, mode-color halo, tick ring with cool/warm arc split, room-temp needle, snowflakes, and popup pills for swing, converti, features, energy.",
   "main": "dist/kpr-miraie-card.js",
   "scripts": {

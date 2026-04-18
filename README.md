@@ -206,6 +206,8 @@ You should see devices connecting and status flowing.
 
 ## Changelog
 
+> Companion card changes are tracked in the **[kpr-miraie-card](https://github.com/hareeshmu/kpr-miraie-card/releases)** repo. Most recent: **v1.3.1** — show room temperature as the big center reading when the AC is powered off.
+
 ### v1.3.0
 - **New Lovelace card** ([kpr-miraie-card](https://github.com/hareeshmu/kpr-miraie-card)) — [LVGL-inspired](https://github.com/hareeshmu/climate-control-display) circular dial, mode-color halo, draggable handle, room-temp needle, pill-row popups, responsive layout, auto-derived companion entities. Shipped as a separate HACS plugin repo.
 - **Protocol fix: Clean vs Eco** — `acec` is the MirAIe app's Clean button, not Eco. `acem` is real Eco mode. Both are now exposed as separate switches (`switch.kpr_<id>_acec` kept for history; new `switch.kpr_<id>_acem` added)
