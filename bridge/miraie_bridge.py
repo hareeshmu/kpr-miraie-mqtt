@@ -247,7 +247,7 @@ class MirAIeBridge:
                 dev_name = self.devices[device_id].get("name", device_id)
                 KNOWN = {"ps","acmd","actmp","rmtmp","acfs","acvs","achs","acec","acem",
                          "acpm","acng","acdc","bzr","cnv","rssi","ki","cnt","sid",
-                         "ts","onlineStatus","errCode","wt","ver"}
+                         "ts","onlineStatus","errCode","wt","ver","V","mo"}
                 unknown = {k: v for k, v in d.items() if k not in KNOWN}
                 print(f"[cloud→local] {dev_name}: ps={d.get('ps')} acmd={d.get('acmd')} actmp={d.get('actmp')} acfs={d.get('acfs')} acvs={d.get('acvs')} achs={d.get('achs')}")
                 if unknown:

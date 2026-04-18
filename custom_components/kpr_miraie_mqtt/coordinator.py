@@ -249,6 +249,30 @@ class MirAIeCoordinator:
             "entity_category": "diagnostic",
         }))
 
+        # Firmware version (status field `V`)
+        entities.append(("sensor", f"{slug}_firmware", {
+            "name": "Firmware",
+            "unique_id": f"kpr_miraie_{device_id}_firmware",
+            "object_id": f"{slug}_firmware",
+            "device": device_block,
+            "state_topic": status_topic,
+            "value_template": "{{ value_json.V }}",
+            "icon": "mdi:chip",
+            "entity_category": "diagnostic",
+        }))
+
+        # Model number (status field `mo`) — printed on the indoor unit's label
+        entities.append(("sensor", f"{slug}_model_number", {
+            "name": "Model Number",
+            "unique_id": f"kpr_miraie_{device_id}_model_number",
+            "object_id": f"{slug}_model_number",
+            "device": device_block,
+            "state_topic": status_topic,
+            "value_template": "{{ value_json.mo }}",
+            "icon": "mdi:identifier",
+            "entity_category": "diagnostic",
+        }))
+
         # Online binary sensor
         entities.append(("binary_sensor", f"{slug}_online", {
             "name": "Online",
