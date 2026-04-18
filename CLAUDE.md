@@ -78,7 +78,8 @@ scp card/dist/kpr-miraie-card.js <user>@<HA_IP>:/config/www/kpr-miraie-card.js
 - Device identifiers use `kpr_miraie_{device_id}`
 - MQTT topics use prefix `miraie/` (not `kpr_miraie/`) — this is the local broker topic namespace
 - Display name is "KPR MirAIe Local MQTT" — consistent across manifest, hacs.json, strings.json, translations
-- Bridge must NOT auto-publish MQTT Discovery (HA component handles it) — use `--discover-only` flag for manual
+- Bridge does NOT publish MQTT Discovery — that's exclusively the HA component's job. The bridge is a pure cloud↔local relay.
+- HAOS add-on lives in `addon-miraie-bridge/` and contains a copy of `bridge/miraie_bridge.py` (Docker build context can't reach `bridge/`). Keep them in sync via `scripts/sync-addon-bridge.sh`; CI (`.github/workflows/addon-sync-check.yml`) fails any PR where they diverge.
 - Card version is in `card/package.json` + a `KPR_CARD_VERSION` banner at the top of `card/src/kpr-miraie-card.js` — keep both in sync
 - Card auto-derives companion entity IDs from the climate entity's slug (e.g. `climate.kpr_xyz` → `switch.kpr_xyz_acem`, `sensor.kpr_xyz_rssi`). Users can override any field in YAML. Entity naming in coordinator must follow `{slug}_{suffix}` or auto-derive breaks.
 - Inside the card's `css\`...\``template literal, backticks are FORBIDDEN (even inside comments). They close the template literal. Learned the hard way — use regular quotes in CSS comments.
