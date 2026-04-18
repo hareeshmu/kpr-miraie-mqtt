@@ -137,21 +137,29 @@ devices:
 
 Each AC automatically gets the following entities via MQTT Discovery:
 
+_Entity IDs use the slug the HA component derives from the device (e.g. `kpr_<deviceid>`). The MirAIe field name is shown in parentheses where it differs from the suffix._
+
 | Entity | Type | Description |
 |---|---|---|
 | `climate.kpr_{id}` | Climate | Main thermostat — temp, HVAC mode, fan speed |
 | `sensor.kpr_{id}_room_temp` | Sensor | Current room temperature |
 | `sensor.kpr_{id}_rssi` | Sensor | WiFi signal strength (dBm) |
 | `binary_sensor.kpr_{id}_online` | Binary sensor | Cloud connectivity |
-| `switch.kpr_{id}_eco` | Switch | Clean mode (`acec`) |
-| `switch.kpr_{id}_eco_mode` | Switch | Eco mode (`acem`) |
-| `switch.kpr_{id}_powerful` | Switch | Powerful / boost mode |
-| `switch.kpr_{id}_nanoe` | Switch | Nanoe air purification |
-| `switch.kpr_{id}_display` | Switch | LED panel on/off |
-| `switch.kpr_{id}_buzzer` | Switch | Beep on command |
+| `switch.kpr_{id}_acec` | Switch | **Clean Mode** — the MirAIe app's "Clean" button |
+| `switch.kpr_{id}_acem` | Switch | **Eco Mode** — true Eco (auto-targets 26°C) |
+| `switch.kpr_{id}_acpm` | Switch | Powerful / boost mode |
+| `switch.kpr_{id}_acng` | Switch | Nanoe air purification |
+| `switch.kpr_{id}_acdc` | Switch | LED display panel on/off |
+| `switch.kpr_{id}_bzr` | Switch | Beep on command |
 | `select.kpr_{id}_v_swing` | Select | Vertical vane position (Auto / 1–5) |
 | `select.kpr_{id}_h_swing` | Select | Horizontal vane position (Auto / 1–5) |
-| `select.kpr_{id}_converti` | Select | Converti8 capacity (Off / 40–90% / FC / HC) |
+| `select.kpr_{id}_converti` | Select | Converti8 capacity (Off / 40 / 50 / 60 / 70 / 80 / 90 / FC / HC) |
+| `sensor.kpr_{id}_energy_daily` | Sensor | Daily energy consumption (kWh) |
+| `sensor.kpr_{id}_energy_weekly` | Sensor | Weekly energy consumption (kWh) |
+| `sensor.kpr_{id}_energy_monthly` | Sensor | Monthly energy consumption (kWh) |
+| `sensor.kpr_{id}_operating_hours` | Sensor | _(model-dependent)_ Total operating hours |
+| `sensor.kpr_{id}_filter_dust` | Sensor | _(model-dependent)_ Filter dust level |
+| `binary_sensor.kpr_{id}_filter_clean` | Binary sensor | _(model-dependent)_ Filter cleaning required |
 
 ---
 
