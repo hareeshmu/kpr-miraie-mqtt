@@ -232,12 +232,27 @@ You should see devices connecting and status flowing.
 
 > Companion card changes are tracked in the **[kpr-miraie-card](https://github.com/hareeshmu/kpr-miraie-card/releases)** repo. Most recent: **v1.3.4** — auto-derive companion entities survives climate renames (resolves via HA entity registry `device_id`).
 
-### Add-on v1.0.0
-- **New: MirAIe MQTT Bridge HA add-on** by [@pranjal-joshi](https://github.com/pranjal-joshi)
-- Runs the bridge natively inside Home Assistant OS — no separate Docker host needed
-- Auto-discovers Mosquitto credentials via Supervisor API
-- Auto-discovers MirAIe devices on first run; persists across restarts
-- Full configuration via HA UI (no YAML files to edit)
+### v1.4.2
+- Silence HA template warnings for devices that omit optional status fields:
+  - Switches (`acec`, `acem`, `acpm`, `acng`, `acdc`, `bzr`) default to `off` (PR #5 by [@timaseth](https://github.com/timaseth))
+  - Converti select (`cnv`) defaults to `0` (PR #5 by [@timaseth](https://github.com/timaseth))
+  - Swing selects (`acvs`, `achs`) default to `Auto` when field missing (PR #6)
+  - Model Number sensor (`mo`) defaults to `unknown` (PR #6)
+  - Online binary sensor (`onlineStatus`) defaults to `false` / offline (PR #6)
+
+### v1.4.1
+- New diagnostic sensor: **Firmware** (status field `V`) — shows indoor-unit firmware version
+- New diagnostic sensor: **Model Number** (status field `mo`) — matches the label printed on the indoor unit
+- Bridge: adds `V` and `mo` to KNOWN fields so they no longer show up in `UNKNOWN_FIELDS` log noise
+
+### v1.4.0
+- **New: MirAIe MQTT Bridge HA add-on** (add-on v1.0.0) by [@pranjal-joshi](https://github.com/pranjal-joshi)
+  - Runs the bridge natively inside Home Assistant OS — no separate Docker host needed
+  - Auto-discovers Mosquitto credentials via Supervisor API
+  - Auto-discovers MirAIe devices on first run; persists across restarts
+  - Full configuration via HA UI (no YAML files to edit)
+- Bridge: remove dead HA Discovery code (HA component owns discovery exclusively)
+- README: corrected entity table
 
 ### v1.3.0
 - **New Lovelace card** ([kpr-miraie-card](https://github.com/hareeshmu/kpr-miraie-card)) — [LVGL-inspired](https://github.com/hareeshmu/climate-control-display) circular dial, mode-color halo, draggable handle, room-temp needle, pill-row popups, responsive layout, auto-derived companion entities. Shipped as a separate HACS plugin repo.
