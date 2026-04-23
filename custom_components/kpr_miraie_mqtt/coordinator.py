@@ -268,7 +268,7 @@ class MirAIeCoordinator:
             "object_id": f"{slug}_model_number",
             "device": device_block,
             "state_topic": status_topic,
-            "value_template": "{{ value_json.mo }}",
+            "value_template": "{{ value_json.mo | default('unknown') }}",
             "icon": "mdi:identifier",
             "entity_category": "diagnostic",
         }))
@@ -280,7 +280,7 @@ class MirAIeCoordinator:
             "object_id": f"{slug}_online",
             "device": device_block,
             "state_topic": connection_topic,
-            "value_template": "{{ value_json.onlineStatus }}",
+            "value_template": "{{ value_json.onlineStatus | default('false') }}",
             "payload_on": "true",
             "payload_off": "false",
             "device_class": "connectivity",
@@ -321,7 +321,7 @@ class MirAIeCoordinator:
             "object_id": f"{slug}_v_swing",
             "device": device_block,
             "state_topic": status_topic,
-            "value_template": "{% if value_json.acvs == 0 %}Auto{% else %}{{ value_json.acvs }}{% endif %}",
+            "value_template": "{% if value_json.acvs | default(0) == 0 %}Auto{% else %}{{ value_json.acvs }}{% endif %}",
             "command_topic": control_topic,
             "command_template": (
                 '{% if value == "Auto" %}'
@@ -341,7 +341,7 @@ class MirAIeCoordinator:
             "object_id": f"{slug}_h_swing",
             "device": device_block,
             "state_topic": status_topic,
-            "value_template": "{% if value_json.achs == 0 %}Auto{% else %}{{ value_json.achs }}{% endif %}",
+            "value_template": "{% if value_json.achs | default(0) == 0 %}Auto{% else %}{{ value_json.achs }}{% endif %}",
             "command_topic": control_topic,
             "command_template": (
                 '{% if value == "Auto" %}'
